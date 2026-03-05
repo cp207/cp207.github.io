@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>昌平烟草员工食堂周点餐系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "微软雅黑", sans-serif;
+        }
+        body {
+            background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+            padding-bottom: 110px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        /* 第一行：行宽增加20%（通过左右内边距+最大宽度实现视觉加宽） */
+        .title-row {
+            font-size: 23px;
+            font-weight: bold;
+            text-align: center;
+            padding: 13px 10%; /* 左右各加10%内边距，总计行宽增加20% */
+            max-width: 120%; /* 最大宽度设为120% */
+            margin: 0 auto; /* 居中显示 */
+            background-color: #d9534f;
+            color: #fff;
+            z-index: 10;
+        }
+        /* 第二行：加粗、黑体、红色显示 */
+        .desc-row {
+            font-size: 19px;
+            padding: 10px 15px;
+            background-color: #fff;
+            color: #ff0000; /* 红色 */
+            font-weight: bold; /* 加粗 */
+            font-family: "黑体", "微软雅黑", sans-serif; /* 黑体优先 */
+            line-height: 1.5;
+            border-bottom: 1px solid #eee;
+        }
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        .category-col {
+            width: 30%;
+            max-width: none;
+            min-width: none;
+            background-color: #fff;
+            border-right: 1px solid #eee;
+            overflow-y: auto;
+        }
+        .category-item {
+            padding: 18px 0;
+            text-align: center;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 500;
+            border-bottom: 1px solid #eee;
+            color: #333;
+            transition: background-color 0.2s;
+        }
+        .category-item.active {
+            background-color: #c9302c;
+            color: #fff;
+        }
+        .dish-wrap {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+        .dish-card {
+            background-color: #fff;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .dish-img {
+            width: 90px;
+            height: 90px;
+            background-color: #eee;
+            border-radius: 6px;
+            margin-right: 12px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 12px;
+            text-align: center;
+            padding: 5px;
+        }
+        .dish-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .dish-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .dish-name {
+            font-size: 19px;
+            font-weight: bold;
+            color: #222;
+        }
+        /* 菜品介绍专属样式：红色、字体缩小10% */
+        .dish-intro {
+            font-size: 17.1px; /* 19px缩小10% = 17.1px */
+            color: #ff0000; /* 红色 */
+            font-weight: normal; /* 取消加粗 */
+            margin-left: 5px; /* 和名称间距 */
+        }
+        .dish-rate {
+            font-size: 16px;
+            color: #888;
+        }
+        .add-cart-btn {
+            background-color: #5cb85c;
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 17px;
+            cursor: pointer;
+        }
+        .add-cart-btn:active {
+            background-color: #4cae4c;
+        }
+        .cart-stat {
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            background-color: #fff;
+            border-top: 1px solid #eee;
+            padding: 10px 12px;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+        .cart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .cart-title {
+            font-size: 19px;
+            font-weight: bold;
+        }
+        .clear-cart-btn {
+            background-color: #d9534f;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .cart-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            max-height: 55px;
+            overflow-y: auto;
+            font-size: 16px;
+        }
+        .cart-item {
+            background-color: #f0f0f0;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+        .cart-total {
+            font-size: 17px;
+            font-weight: bold;
+            text-align: right;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="title-row">昌平烟草员工食堂周点餐系统</div>
+<div class="desc-row">
+    为进一步提高和改善员工食堂餐饮质量，精准满足员工的餐饮口味和需要，现制作昌平烟草员工食堂周点菜系统，请大家踊跃参与点菜，我们会根据大家意愿，安排下周的菜谱。谢谢参与！<br>
+    说明：热菜每人只能选择10个、凉菜只能选择10个、主食只能选择2个
+</div>
+
+<div class="main-container">
+    <div class="category-col">
+        <div class="category-item active" data-category="hot">热菜</div>
+        <div class="category-item" data-category="cold">凉菜</div>
+        <div class="category-item" data-category="staple">主食</div>
+    </div>
+
+    <div class="dish-wrap">
+        <!-- 热菜品类（27道） -->
+        <div class="dish-category" id="hotDish">
+            <div class="dish-card" data-dish="红烧肉">
+                <div class="dish-img"><img src="红烧肉.jpg" alt="红烧肉"></div>
+                <div class="dish-info">
+                    <div class="dish-name">红烧肉<span class="dish-intro">（口味：咸甜鲜香，肥而不腻，入口即化；热量：约480大卡/100克；简介：经典鲁式家常菜，精选五花肉慢炖而成，色泽红亮，口感软糯，是大众喜爱的下饭硬菜）</span></div>
+                    <div class="dish-rate" data-dish="红烧肉">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="宫保鸡丁">
+                <div class="dish-img"><img src="宫保鸡丁.jpg" alt="宫保鸡丁"></div>
+                <div class="dish-info">
+                    <div class="dish-name">宫保鸡丁<span class="dish-intro">（口味：麻辣酸甜，口感丰富；热量：约180大卡/100克；简介：经典川菜，选用鸡胸肉搭配花生米、干辣椒炒制，酸甜适口，麻辣鲜香）</span></div>
+                    <div class="dish-rate" data-dish="宫保鸡丁">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="鱼香肉丝">
+                <div class="dish-img"><img src="鱼香肉丝.jpg" alt="鱼香肉丝"></div>
+                <div class="dish-info">
+                    <div class="dish-name">鱼香肉丝<span class="dish-intro">（口味：酸辣甜鲜，鱼香味浓郁；热量：约150大卡/100克；简介：川菜代表菜，以猪肉丝搭配木耳、胡萝卜炒制，无鱼却有鱼香，口感酸辣开胃）</span></div>
+                    <div class="dish-rate" data-dish="鱼香肉丝">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="清蒸鲈鱼">
+                <div class="dish-img"><img src="清蒸鲈鱼.jpg" alt="清蒸鲈鱼"></div>
+                <div class="dish-info">
+                    <div class="dish-name">清蒸鲈鱼<span class="dish-intro">（口味：清淡鲜香，肉质嫩滑；热量：约100大卡/100克；简介：粤式经典菜，鲈鱼清蒸锁鲜，搭配葱姜丝淋热油，保留鱼肉本味，营养低脂）</span></div>
+                    <div class="dish-rate" data-dish="清蒸鲈鱼">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="土豆炖牛肉">
+                <div class="dish-img"><img src="土豆炖牛肉.jpg" alt="土豆炖牛肉"></div>
+                <div class="dish-info">
+                    <div class="dish-name">土豆炖牛肉<span class="dish-intro">（口味：咸香浓郁，软烂入味；热量：约120大卡/100克；简介：经典家常菜，牛肉与土豆慢炖，牛肉软烂，土豆吸满汤汁，口感醇厚，营养丰富）</span></div>
+                    <div class="dish-rate" data-dish="土豆炖牛肉">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="辣子鸡">
+                <div class="dish-img"><img src="辣子鸡.jpg" alt="辣子鸡"></div>
+                <div class="dish-info">
+                    <div class="dish-name">辣子鸡<span class="dish-intro">（口味：麻辣干香，外酥里嫩；热量：约250大卡/100克；简介：川渝特色菜，鸡肉切块炸至酥脆，搭配干辣椒、花椒爆炒，麻辣过瘾，越吃越香）</span></div>
+                    <div class="dish-rate" data-dish="辣子鸡">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="可乐鸡翅">
+                <div class="dish-img"><img src="可乐鸡翅.jpg" alt="可乐鸡翅"></div>
+                <div class="dish-info">
+                    <div class="dish-name">可乐鸡翅<span class="dish-intro">（口味：甜咸鲜香，肉质软烂；热量：约200大卡/100克；简介：家常快手菜，鸡翅搭配可乐焖煮，酱汁浓郁，甜而不腻，大人小孩都爱吃）</span></div>
+                    <div class="dish-rate" data-dish="可乐鸡翅">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="番茄炒蛋">
+                <div class="dish-img"><img src="番茄炒蛋.jpg" alt="番茄炒蛋"></div>
+                <div class="dish-info">
+                    <div class="dish-name">番茄炒蛋<span class="dish-intro">（口味：酸甜鲜香，口感嫩滑；热量：约120大卡/100克；简介：国民家常菜，番茄与鸡蛋炒制，酸甜适口，做法简单，营养均衡，下饭神器）</span></div>
+                    <div class="dish-rate" data-dish="番茄炒蛋">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="梅菜扣肉">
+                <div class="dish-img"><img src="梅菜扣肉.jpg" alt="梅菜扣肉"></div>
+                <div class="dish-info">
+                    <div class="dish-name">梅菜扣肉<span class="dish-intro">（口味：咸香浓郁，肥而不腻；热量：约400大卡/100克；简介：客家经典菜，五花肉搭配梅干菜蒸制，肉香与梅菜香融合，软糯入味）</span></div>
+                    <div class="dish-rate" data-dish="梅菜扣肉">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="红烧排骨">
+                <div class="dish-img"><img src="红烧排骨.jpg" alt="红烧排骨"></div>
+                <div class="dish-info">
+                    <div class="dish-name">红烧排骨<span class="dish-intro">（口味：咸甜酱香，肉质紧实；热量：约280大卡/100克；简介：经典家常菜，排骨焯水后红烧，酱汁裹满排骨，骨香浓郁，啃食过瘾）</span></div>
+                    <div class="dish-rate" data-dish="红烧排骨">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="香煎鸡胸肉">
+                <div class="dish-img"><img src="香煎鸡胸肉.jpg" alt="香煎鸡胸肉"></div>
+                <div class="dish-info">
+                    <div class="dish-name">香煎鸡胸肉<span class="dish-intro">（口味：咸香微焦，口感嫩滑；热量：约110大卡/100克；简介：低脂健康菜，鸡胸肉腌制后煎至金黄，外焦里嫩，适合控卡人群）</span></div>
+                    <div class="dish-rate" data-dish="香煎鸡胸肉">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="蒜蓉粉丝虾">
+                <div class="dish-img"><img src="蒜蓉粉丝虾.jpg" alt="蒜蓉粉丝虾"></div>
+                <div class="dish-info">
+                    <div class="dish-name">蒜蓉粉丝虾<span class="dish-intro">（口味：蒜香鲜香，Q弹入味；热量：约130大卡/100克；简介：粤式家常菜，大虾搭配蒜蓉粉丝蒸制，粉丝吸满虾鲜和蒜香，鲜美可口）</span></div>
+                    <div class="dish-rate" data-dish="蒜蓉粉丝虾">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="西兰花炒虾仁">
+                <div class="dish-img"><img src="西兰花炒虾仁.jpg" alt="西兰花炒虾仁"></div>
+                <div class="dish-info">
+                    <div class="dish-name">西兰花炒虾仁<span class="dish-intro">（口味：清淡鲜香，爽脆Q弹；热量：约80大卡/100克；简介：低脂健康菜，西兰花搭配虾仁清炒，营养均衡，口感爽脆，老少皆宜）</span></div>
+                    <div class="dish-rate" data-dish="西兰花炒虾仁">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="洋葱炒牛肉">
+                <div class="dish-img"><img src="洋葱炒牛肉.jpg" alt="洋葱炒牛肉"></div>
+                <div class="dish-info">
+                    <div class="dish-name">洋葱炒牛肉<span class="dish-intro">（口味：咸香微甜，嫩滑入味；热量：约150大卡/100克；简介：家常快炒菜，牛肉滑炒至嫩，搭配洋葱提香，口感丰富，下饭佳选）</span></div>
+                    <div class="dish-rate" data-dish="洋葱炒牛肉">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="青椒肉丝">
+                <div class="dish-img"><img src="青椒肉丝.jpg" alt="青椒肉丝"></div>
+                <div class="dish-info">
+                    <div class="dish-name">青椒肉丝<span class="dish-intro">（口味：咸香微辣，爽脆嫩滑；热量：约140大卡/100克；简介：国民家常菜，青椒搭配猪肉丝炒制，做法简单，咸辣开胃，配饭绝佳）</span></div>
+                    <div class="dish-rate" data-dish="青椒肉丝">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="芹菜炒香干">
+                <div class="dish-img"><img src="芹菜炒香干.jpg" alt="芹菜炒香干"></div>
+                <div class="dish-info">
+                    <div class="dish-name">芹菜炒香干<span class="dish-intro">（口味：咸香清爽，脆嫩结合；热量：约100大卡/100克；简介：经典素菜，芹菜爽脆搭配香干豆香，清淡解腻，营养健康）</span></div>
+                    <div class="dish-rate" data-dish="芹菜炒香干">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="地三鲜">
+                <div class="dish-img"><img src="地三鲜.jpg" alt="地三鲜"></div>
+                <div class="dish-info">
+                    <div class="dish-name">地三鲜<span class="dish-intro">（口味：咸香浓郁，外酥里嫩；热量：约180大卡/100克；简介：东北经典素菜，土豆、茄子、青椒过油炒制，口感软糯，咸香下饭）</span></div>
+                    <div class="dish-rate" data-dish="地三鲜">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="干煸豆角">
+                <div class="dish-img"><img src="干煸豆角.jpg" alt="干煸豆角"></div>
+                <div class="dish-info">
+                    <div class="dish-name">干煸豆角<span class="dish-intro">（口味：麻辣干香，爽脆入味；热量：约160大卡/100克；简介：川味素菜，豆角煸至微皱，搭配干辣椒、花椒炒制，麻辣干香，越嚼越香）</span></div>
+                    <div class="dish-rate" data-dish="干煸豆角">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="红烧茄子">
+                <div class="dish-img"><img src="红烧茄子.jpg" alt="红烧茄子"></div>
+                <div class="dish-info">
+                    <div class="dish-name">红烧茄子<span class="dish-intro">（口味：咸香软糯，酱香浓郁；热量：约170大卡/100克；简介：经典素菜，茄子红烧至软糯，吸满酱汁，咸香下饭，做法简单）</span></div>
+                    <div class="dish-rate" data-dish="红烧茄子">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="虎皮青椒">
+                <div class="dish-img"><img src="虎皮青椒.jpg" alt="虎皮青椒"></div>
+                <div class="dish-info">
+                    <div class="dish-name">虎皮青椒<span class="dish-intro">（口味：咸辣鲜香，软糯入味；热量：约70大卡/100克；简介：家常素菜，青椒煎至虎皮状，调以生抽香醋，咸辣开胃，解腻下饭）</span></div>
+                    <div class="dish-rate" data-dish="虎皮青椒">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="香菇滑鸡">
+                <div class="dish-img"><img src="香菇滑鸡.jpg" alt="香菇滑鸡"></div>
+                <div class="dish-info">
+                    <div class="dish-name">香菇滑鸡<span class="dish-intro">（口味：鲜香嫩滑，菌香浓郁；热量：约130大卡/100克；简介：粤式家常菜，鸡肉滑嫩搭配香菇鲜香，清淡不腻，营养均衡）</span></div>
+                    <div class="dish-rate" data-dish="香菇滑鸡">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="啤酒鸭">
+                <div class="dish-img"><img src="啤酒鸭.jpg" alt="啤酒鸭"></div>
+                <div class="dish-info">
+                    <div class="dish-name">啤酒鸭<span class="dish-intro">（口味：酱香浓郁，微苦回甜；热量：约220大卡/100克；简介：特色家常菜，鸭肉搭配啤酒焖煮，去腥味增酒香，肉质软烂，酱香十足）</span></div>
+                    <div class="dish-rate" data-dish="啤酒鸭">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="白灼菜心">
+                <div class="dish-img"><img src="白灼菜心.jpg" alt="白灼菜心"></div>
+                <div class="dish-info">
+                    <div class="dish-name">白灼菜心<span class="dish-intro">（口味：清淡鲜甜，爽脆可口；热量：约30大卡/100克；简介：粤式经典素菜，菜心焯水后淋生抽热油，保留本味，清爽解腻，低脂健康）</span></div>
+                    <div class="dish-rate" data-dish="白灼菜心">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="清炒时蔬">
+                <div class="dish-img"><img src="清炒时蔬.jpg" alt="清炒时蔬"></div>
+                <div class="dish-info">
+                    <div class="dish-name">清炒时蔬<span class="dish-intro">（口味：清淡鲜香，爽脆可口；热量：约40大卡/100克；简介：家常素菜，当季青菜清炒，少油少盐，保留蔬菜本味，健康解腻）</span></div>
+                    <div class="dish-rate" data-dish="清炒时蔬">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="蒜苔炒肉">
+                <div class="dish-img"><img src="蒜苔炒肉.jpg" alt="蒜苔炒肉"></div>
+                <div class="dish-info">
+                    <div class="dish-name">蒜苔炒肉<span class="dish-intro">（口味：咸香微辣，脆嫩结合；热量：约150大卡/100克；简介：经典家常菜，蒜苔爽脆搭配猪肉香，咸香下饭，做法简单）</span></div>
+                    <div class="dish-rate" data-dish="蒜苔炒肉">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="豆角炒肉">
+                <div class="dish-img"><img src="豆角炒肉.jpg" alt="豆角炒肉"></div>
+                <div class="dish-info">
+                    <div class="dish-name">豆角炒肉<span class="dish-intro">（口味：咸香微辣，爽脆嫩滑；热量：约140大卡/100克；简介：家常快炒菜，豆角爽脆搭配猪肉丝，咸香下饭，老少皆宜）</span></div>
+                    <div class="dish-rate" data-dish="豆角炒肉">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="腐竹烧肉">
+                <div class="dish-img"><img src="腐竹烧肉.jpg" alt="腐竹烧肉"></div>
+                <div class="dish-info">
+                    <div class="dish-name">腐竹烧肉<span class="dish-intro">（口味：咸香浓郁，软糯入味；热量：约250大卡/100克；简介：经典家常菜，腐竹吸满红烧肉汤汁，豆香融合肉香，软糯下饭）</span></div>
+                    <div class="dish-rate" data-dish="腐竹烧肉">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 凉菜品类（12道） -->
+        <div class="dish-category" id="coldDish" style="display: none;">
+            <div class="dish-card" data-dish="拍黄瓜">
+                <div class="dish-img"><img src="拍黄瓜.jpg" alt="拍黄瓜"></div>
+                <div class="dish-info">
+                    <div class="dish-name">拍黄瓜<span class="dish-intro">（口味：酸辣鲜香，爽脆解腻；热量：约25大卡/100克；简介：经典凉拌菜，黄瓜拍碎后调味，酸辣爽口，解腻开胃）</span></div>
+                    <div class="dish-rate" data-dish="拍黄瓜">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="凉拌木耳">
+                <div class="dish-img"><img src="凉拌木耳.jpg" alt="凉拌木耳"></div>
+                <div class="dish-info">
+                    <div class="dish-name">凉拌木耳<span class="dish-intro">（口味：酸辣爽脆，鲜香可口；热量：约20大卡/100克；简介：经典凉拌菜，木耳泡发后凉拌，酸辣爽脆，低脂健康，解腻开胃）</span></div>
+                    <div class="dish-rate" data-dish="凉拌木耳">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="夫妻肺片">
+                <div class="dish-img"><img src="夫妻肺片.jpg" alt="夫妻肺片"></div>
+                <div class="dish-info">
+                    <div class="dish-name">夫妻肺片<span class="dish-intro">（口味：麻辣鲜香，软糯弹牙；热量：约180大卡/100克；简介：川菜经典凉菜，牛舌、牛肚等卤制后凉拌，麻辣鲜香，越吃越上头）</span></div>
+                    <div class="dish-rate" data-dish="夫妻肺片">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="凉拌海带丝">
+                <div class="dish-img"><img src="凉拌海带丝.jpg" alt="凉拌海带丝"></div>
+                <div class="dish-info">
+                    <div class="dish-name">凉拌海带丝<span class="dish-intro">（口味：酸辣爽脆，鲜香解腻；热量：约15大卡/100克；简介：家常凉拌菜，海带丝焯水后调味，酸辣爽口，低脂低卡，营养丰富）</span></div>
+                    <div class="dish-rate" data-dish="凉拌海带丝">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="麻酱黄瓜">
+                <div class="dish-img"><img src="麻酱黄瓜.jpg" alt="麻酱黄瓜"></div>
+                <div class="dish-info">
+                    <div class="dish-name">麻酱黄瓜<span class="dish-intro">（口味：咸香微甜，麻酱浓郁；热量：约80大卡/100克；简介：北方经典凉菜，黄瓜搭配麻酱调味，咸甜适口，麻香浓郁，解腻开胃）</span></div>
+                    <div class="dish-rate" data-dish="麻酱黄瓜">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="凉拌豆腐丝">
+                <div class="dish-img"><img src="凉拌豆腐丝.jpg" alt="凉拌豆腐丝"></div>
+                <div class="dish-info">
+                    <div class="dish-name">凉拌豆腐丝<span class="dish-intro">（口味：咸香微辣，筋道爽口；热量：约100大卡/100克；简介：经典素菜凉菜，豆腐丝调味凉拌，豆香浓郁，清爽解腻，佐酒下饭）</span></div>
+                    <div class="dish-rate" data-dish="凉拌豆腐丝">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="凉拌藕片">
+                <div class="dish-img"><img src="凉拌藕片.jpg" alt="凉拌藕片"></div>
+                <div class="dish-info">
+                    <div class="dish-name">凉拌藕片<span class="dish-intro">（口味：酸辣爽脆，清甜可口；热量：约30大卡/100克；简介：家常凉拌菜，藕片焯水后调味，酸辣爽脆，清甜解腻，老少皆宜）</span></div>
+                    <div class="dish-rate" data-dish="凉拌藕片">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="酱牛肉">
+                <div class="dish-img"><img src="酱牛肉.jpg" alt="酱牛肉"></div>
+                <div class="dish-info">
+                    <div class="dish-name">酱牛肉<span class="dish-intro">（口味：酱香浓郁，紧实有嚼劲；热量：约250大卡/100克；简介：经典卤味凉菜，牛肉卤制后切片，酱香浓郁，越嚼越香，佐酒佳品）</span></div>
+                    <div class="dish-rate" data-dish="酱牛肉">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="凉拌猪耳">
+                <div class="dish-img"><img src="凉拌猪耳.jpg" alt="凉拌猪耳"></div>
+                <div class="dish-info">
+                    <div class="dish-name">凉拌猪耳<span class="dish-intro">（口味：麻辣鲜香，爽脆有嚼劲；热量：约180大卡/100克；简介：经典卤味凉菜，猪耳卤制后凉拌，麻辣爽口，嚼劲十足，佐酒下饭）</span></div>
+                    <div class="dish-rate" data-dish="凉拌猪耳">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="泡椒凤爪">
+                <div class="dish-img"><img src="泡椒凤爪.jpg" alt="泡椒凤爪"></div>
+                <div class="dish-info">
+                    <div class="dish-name">泡椒凤爪<span class="dish-intro">（口味：酸辣爽脆，越嚼越香；热量：约190大卡/100克；简介：经典川味凉菜，凤爪腌制入味，酸辣爽脆，追剧佐酒必备）</span></div>
+                    <div class="dish-rate" data-dish="泡椒凤爪">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="凉拌三丝">
+                <div class="dish-img"><img src="凉拌三丝.jpg" alt="凉拌三丝"></div>
+                <div class="dish-info">
+                    <div class="dish-name">凉拌三丝<span class="dish-intro">（口味：酸辣清爽，脆嫩结合；热量：约40大卡/100克；简介：经典素菜凉菜，土豆丝、胡萝卜丝、粉丝凉拌，酸辣爽口，解腻开胃）</span></div>
+                    <div class="dish-rate" data-dish="凉拌三丝">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="盐水花生">
+                <div class="dish-img"><img src="盐水花生.jpg" alt="盐水花生"></div>
+                <div class="dish-info">
+                    <div class="dish-name">盐水花生<span class="dish-intro">（口味：咸香清淡，软糯入味；热量：约120大卡/100克；简介：经典下酒菜，花生盐水煮制，咸香软糯，清淡解腻，佐酒佳品）</span></div>
+                    <div class="dish-rate" data-dish="盐水花生">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主食品类（8道） -->
+        <div class="dish-category" id="stapleDish" style="display: none;">
+            <div class="dish-card" data-dish="白米饭">
+                <div class="dish-img"><img src="白米饭.jpg" alt="白米饭"></div>
+                <div class="dish-info">
+                    <div class="dish-name">白米饭<span class="dish-intro">（口味：清淡微甜，软糯适口；热量：约116大卡/100克；简介：国民主食，大米蒸煮而成，口感软糯，搭配各类菜肴都合适）</span></div>
+                    <div class="dish-rate" data-dish="白米饭">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="馒头">
+                <div class="dish-img"><img src="馒头.jpg" alt="馒头"></div>
+                <div class="dish-info">
+                    <div class="dish-name">馒头<span class="dish-intro">（口味：清淡微甜，松软有嚼劲；热量：约220大卡/100克；简介：北方经典主食，面粉发酵蒸制，松软可口，搭配炒菜、咸菜皆宜）</span></div>
+                    <div class="dish-rate" data-dish="馒头">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="花卷">
+                <div class="dish-img"><img src="花卷.jpg" alt="花卷"></div>
+                <div class="dish-info">
+                    <div class="dish-name">花卷<span class="dish-intro">（口味：咸香松软，层次丰富；热量：约210大卡/100克；简介：经典发酵主食，面粉加葱花盐卷制蒸制，咸香松软，层次分明，口感佳）</span></div>
+                    <div class="dish-rate" data-dish="花卷">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="葱油饼">
+                <div class="dish-img"><img src="葱油饼.jpg" alt="葱油饼"></div>
+                <div class="dish-info">
+                    <div class="dish-name">葱油饼<span class="dish-intro">（口味：咸香酥脆，葱香浓郁；热量：约300大卡/100克；简介：经典家常主食，面粉加葱花煎制，外酥里软，葱香扑鼻，早餐佳品）</span></div>
+                    <div class="dish-rate" data-dish="葱油饼">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="炸酱面">
+                <div class="dish-img"><img src="炸酱面.jpg" alt="炸酱面"></div>
+                <div class="dish-info">
+                    <div class="dish-name">炸酱面<span class="dish-intro">（口味：酱香浓郁，咸香适口；热量：约280大卡/100克；简介：北京经典主食，面条搭配黄豆酱炒制的炸酱，咸香浓郁，口感丰富）</span></div>
+                    <div class="dish-rate" data-dish="炸酱面">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="扬州炒饭">
+                <div class="dish-img"><img src="扬州炒饭.jpg" alt="扬州炒饭"></div>
+                <div class="dish-info">
+                    <div class="dish-name">扬州炒饭<span class="dish-intro">（口味：咸香鲜香，颗粒分明；热量：约180大卡/100克；简介：经典炒饭，米饭搭配鸡蛋、火腿、青豆等炒制，颗粒分明，咸香适口）</span></div>
+                    <div class="dish-rate" data-dish="扬州炒饭">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="包子（猪肉大葱）">
+                <div class="dish-img"><img src="包子（猪肉大葱）.jpg" alt="包子（猪肉大葱）"></div>
+                <div class="dish-info">
+                    <div class="dish-name">包子（猪肉大葱）<span class="dish-intro">（口味：咸香鲜香，皮薄馅足；热量：约250大卡/100克；简介：经典中式主食，面皮包裹猪肉大葱馅蒸制，鲜香多汁，早餐首选）</span></div>
+                    <div class="dish-rate" data-dish="包子（猪肉大葱）">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="包子（韭菜鸡蛋）">
+                <div class="dish-img"><img src="包子（韭菜鸡蛋）.jpg" alt="包子（韭菜鸡蛋）"></div>
+                <div class="dish-info">
+                    <div class="dish-name">包子（韭菜鸡蛋）<span class="dish-intro">（口味：鲜香清淡，韭菜味浓；热量：约230大卡/100克；简介：经典素馅包子，面皮包裹韭菜鸡蛋馅蒸制，鲜香清淡，素食者首选）</span></div>
+                    <div class="dish-rate" data-dish="包子（韭菜鸡蛋）">点击率：0</div>
+                   
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="小米粥">
+                <div class="dish-img"><img src="小米粥.jpg" alt="小米粥"></div>
+                <div class="dish-info">
+                    <div class="dish-name">小米粥<span class="dish-intro">（口味：清淡微甜，软糯养胃；热量：约46大卡/100克；简介：经典杂粮粥，小米熬制而成，口感软糯，养胃易消化，早餐/晚餐佳品）</span></div>
+                    <div class="dish-rate" data-dish="小米粥">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+            <div class="dish-card" data-dish="南瓜粥">
+                <div class="dish-img"><img src="南瓜粥.jpg" alt="南瓜粥"></div>
+                <div class="dish-info">
+                    <div class="dish-name">南瓜粥<span class="dish-intro">（口味：清甜软糯，香甜可口；热量：约35大卡/100克；简介：家常粥品，南瓜与大米熬制，清甜软糯，营养丰富，老少皆宜）</span></div>
+                    <div class="dish-rate" data-dish="南瓜粥">点击率：0</div>
+                    <button class="add-cart-btn">加入购物车</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="cart-stat">
+    <div class="cart-header">
+        <div class="cart-title">已选菜品</div>
+        <button class="clear-cart-btn">清空购物车</button>
+    </div>
+    <div class="cart-list" id="cartList">
+        <!-- 购物车菜品会在这里显示 -->
+    </div>
+    <div class="cart-total" id="cartTotal">总计：0 道菜品</div>
+</div>
+
+<script>
+    // 以下是购物车功能代码（核心！扫码后能加菜/统计数量）
+    // 1. 分类切换
+    const categoryItems = document.querySelectorAll('.category-item');
+    const dishCategories = document.querySelectorAll('.dish-category');
+    categoryItems.forEach(item => {
+        item.addEventListener('click', () => {
+            // 移除所有分类的active样式
+            categoryItems.forEach(i => i.classList.remove('active'));
+            // 给当前点击的分类加active
+            item.classList.add('active');
+            // 获取当前分类标识
+            const category = item.dataset.category;
+            // 隐藏所有菜品分类
+            dishCategories.forEach(cate => cate.style.display = 'none');
+            // 显示当前分类的菜品
+            document.getElementById(category + 'Dish').style.display = 'block';
+        });
+    });
+
+    // 2. 购物车功能
+    const cart = {
+        hot: [], // 热菜
+        cold: [], // 凉菜
+        staple: [], // 主食
+        max: {hot:10, cold:10, staple:2} // 最大选择数量
+    };
+    const addCartBtns = document.querySelectorAll('.add-cart-btn');
+    const cartList = document.getElementById('cartList');
+    const cartTotal = document.getElementById('cartTotal');
+
+    // 点击加入购物车
+    addCartBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // 获取菜品信息
+            const dishCard = btn.closest('.dish-card');
+            const dishName = dishCard.dataset.dish;
+            // 判断菜品分类
+            let dishCategory = '';
+            if (dishCard.closest('#hotDish')) dishCategory = 'hot';
+            else if (dishCard.closest('#coldDish')) dishCategory = 'cold';
+            else if (dishCard.closest('#stapleDish')) dishCategory = 'staple';
+
+            // 检查是否超过最大数量
+            if (cart[dishCategory].length >= cart.max[dishCategory]) {
+                alert(`该分类最多只能选${cart.max[dishCategory]}个！`);
+                return;
+            }
+
+            // 加入购物车（去重）
+            if (!cart[dishCategory].includes(dishName)) {
+                cart[dishCategory].push(dishName);
+                // 更新购物车显示
+                updateCart();
+                // 增加点击率
+                const rateEle = dishCard.querySelector('.dish-rate');
+                let rate = parseInt(rateEle.innerText.replace('点击率：', ''));
+                rateEle.innerText = `点击率：${rate + 1}`;
+            } else {
+                alert('该菜品已加入购物车！');
+            }
+        });
+    });
+
+    // 清空购物车
+    document.querySelector('.clear-cart-btn').addEventListener('click', () => {
+        cart.hot = [];
+        cart.cold = [];
+        cart.staple = [];
+        updateCart();
+    });
+
+    // 更新购物车显示
+    function updateCart() {
+        cartList.innerHTML = '';
+        let total = 0;
+        // 遍历所有分类
+        for (const cate in cart) {
+            cart[cate].forEach(dish => {
+                const cartItem = document.createElement('div');
+                cartItem.className = 'cart-item';
+                cartItem.innerText = dish;
+                cartList.appendChild(cartItem);
+                total++;
+            });
+        }
+        cartTotal.innerText = `总计：${total} 道菜品`;
+    }
+</script>
+</body>
+</html>
